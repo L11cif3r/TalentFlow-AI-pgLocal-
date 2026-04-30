@@ -1,0 +1,102 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+    
+    function isOwner(data) {
+      return isSignedIn() && data.userId == request.auth.uid;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Validation Blueprints ---
+    
+    function isValidJob(data) {
+      return data.keys().hasAll(['title', 'jdText', 'xrayQuery', 'userId', 'createdAt'])
+        && data.keys().size() <= 10
+        && data.title is string && data.title.size() <= 100
+        && data.jdText is string && data.jdText.size() <= 5000
+        && data.xrayQuery is string && data.xrayQuery.size() <= 500
+        && data.userId == request.auth.uid
+        && data.createdAt == request.time;
+    }
+
+    function isValidCandidate(data) {
+      return data.keys().hasAll(['name', 'link', 'userId', 'jobId', 'createdAt'])
+        && data.keys().size() <= 10
+        && data.name is string && data.name.size() <= 100
+        && data.link is string && data.link.size() <= 500
+        && data.status in ['new', 'reviewed', 'contacted', 'rejected']
+        && data.userId == request.auth.uid
+        && data.createdAt == request.time;
+    }
+
+    function isValidMessage(data) {
+      return data.keys().hasAll(['subject', 'body', 'candidateId', 'userId', 'createdAt'])
+        && data.keys().size() <= 6
+        && data.subject is string && data.subject.size() <= 200
+        && data.body is string && data.body.size() <= 2000
+        && data.userId == request.auth.uid
+        && data.createdAt == request.time;
+    }
+
+    // --- Match Rules ---
+
+    match /jobs/{jobId} {
+      allow create: if isSignedIn() && isValidId(jobId) && isValidJob(incoming());
+      allow get: if isOwner(existing());
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow update: if isOwner(existing()) && isValidJob(incoming())
+        && incoming().userId == existing().userId
+        && incoming().createdAt == existing().createdAt
+        && (
+          incoming().diff(existing()).affectedKeys().hasOnly(['title', 'jdText', 'xrayQuery', 'skills', 'preferred', 'experience', 'keywords'])
+        );
+      allow delete: if isOwner(existing());
+
+      match /candidates/{candidateId} {
+        // Master Gate: Verify parent job ownership
+        function parentJobOwned() {
+          return get(/databases/$(database)/documents/jobs/$(jobId)).data.userId == request.auth.uid;
+        }
+
+        allow create: if isSignedIn() && isValidId(candidateId) && parentJobOwned() && isValidCandidate(incoming());
+        allow get: if isOwner(existing());
+        allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+        allow update: if isOwner(existing()) && isValidCandidate(incoming())
+          && incoming().userId == existing().userId
+          && incoming().jobId == existing().jobId
+          && (
+            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'name', 'link', 'snippet'])
+          );
+        allow delete: if isOwner(existing());
+
+        match /messages/{messageId} {
+          allow create: if isSignedIn() && isValidId(messageId) && parentJobOwned() && isValidMessage(incoming());
+          allow get: if isOwner(existing());
+          allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+          allow update: if false; // Messages are immutable for audit
+          allow delete: if isOwner(existing());
+        }
+      }
+    }
+  }
+}

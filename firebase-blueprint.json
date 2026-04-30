@@ -1,0 +1,63 @@
+{
+  "entities": {
+    "JobProfile": {
+      "title": "Job Profile",
+      "description": "Structured job description and search query data.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "jdText": { "type": "string" },
+        "skills": { "type": "array", "items": { "type": "string" } },
+        "preferred": { "type": "array", "items": { "type": "string" } },
+        "experience": { "type": "string" },
+        "keywords": { "type": "array", "items": { "type": "string" } },
+        "xrayQuery": { "type": "string" },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "jdText", "xrayQuery", "userId", "createdAt"]
+    },
+    "Candidate": {
+      "title": "Candidate",
+      "description": "A candidate profile found via sourcing.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "link": { "type": "string" },
+        "snippet": { "type": "string" },
+        "status": { "type": "string", "enum": ["new", "reviewed", "contacted", "rejected"] },
+        "userId": { "type": "string" },
+        "jobId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "link", "userId", "jobId", "createdAt"]
+    },
+    "OutreachMessage": {
+      "title": "Outreach Message",
+      "description": "AI generated outreach message for a specific candidate.",
+      "type": "object",
+      "properties": {
+        "subject": { "type": "string" },
+        "body": { "type": "string" },
+        "candidateId": { "type": "string" },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["subject", "body", "candidateId", "userId", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/jobs/{jobId}": {
+      "schema": "JobProfile",
+      "description": "Collection of job profiles created by recruiters."
+    },
+    "/jobs/{jobId}/candidates/{candidateId}": {
+      "schema": "Candidate",
+      "description": "Candidates sourced for a specific job profile."
+    },
+    "/jobs/{jobId}/candidates/{candidateId}/messages/{messageId}": {
+      "schema": "OutreachMessage",
+      "description": "Outreach history for a candidate."
+    }
+  }
+}

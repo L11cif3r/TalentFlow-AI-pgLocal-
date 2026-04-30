@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+httpx
+sqlalchemy
+openai
+pydantic
+python-dotenv
+jinja2
+python-multipart
