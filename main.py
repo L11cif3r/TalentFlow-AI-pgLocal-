@@ -214,7 +214,7 @@ async def parse_jd(request: JDRequest, db: Session = Depends(get_db)):
         "{\n  \"title\": \"Clean Job Title\",\n  \"skills\": [\"skill1\", \"skill2\"],\n  \"experience\": \"e.g. 5+ years\",\n  \"xrayQuery\": \"site:linkedin.com/in 'title' 'skill1' 'skill2'\"\n}"
     )
     try:
-        response = client.models.generate_content(model='gemini-3-flash-preview', contents=prompt)
+        response = client.models.generate_content(model='gemma-3-27b-it', contents=prompt)
         data = parse_gemini_json_response(response)
 
         db_job = JobModel(
@@ -285,7 +285,7 @@ async def analyze_candidates(request: AnalysisRequest, db: Session = Depends(get
     )
 
     try:
-        response = client.models.generate_content(model='gemini-3-flash-preview', contents=prompt)
+        response = client.models.generate_content(model='gemma-3-27b-it', contents=prompt)
         analysis_results = parse_gemini_json_response(response)
         if not isinstance(analysis_results, list):
             raise ValueError("Analysis response must be a JSON array")
@@ -399,7 +399,7 @@ async def generate_outreach(request: OutreachRequest):
         "Return ONLY JSON: { \"subject\": \"...\", \"body\": \"...\" }"
     )
     try:
-        response = client.models.generate_content(model='gemini-3-flash-preview', contents=prompt)
+        response = client.models.generate_content(model='gemma-3-27b-it', contents=prompt)
         return parse_gemini_json_response(response)
     except Exception as e:
         logger.error(f"Gemini Outreach Error: {e}")
