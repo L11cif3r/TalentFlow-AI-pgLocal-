@@ -34,10 +34,10 @@ async function startServer() {
       const response = await axios.get("https://serpapi.com/search", {
         params: {
           q: query,
-          engine: "bing",
+          engine: "google",
           api_key: apiKey,
           num: 20,
-          filters: "DiscoveryTime:\"PastMonth\""
+         // filters: "DiscoveryTime:\"PastMonth\""
         }
       });
       
