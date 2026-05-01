@@ -250,7 +250,7 @@ async def search_candidates(request: SearchRequest):
             response = await client.get("https://serpapi.com/search", params=params)
             data = response.json()
             
-            results = data.get("organic_results", [])[:5]
+            results = data.get("organic_results", [])[:15]
             filtered = [
                 {
                     "title": r.get("title"),
